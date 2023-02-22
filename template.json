@@ -1,8 +1,5 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
-  "Mappings": {
-    "Constants": {}
-  },
   "Resources": {
     "S3Bucket": {
       "Type": "AWS::S3::Bucket"
