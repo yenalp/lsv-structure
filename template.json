@@ -14,11 +14,11 @@
           "AttributeName": "questionId",
           "AttributeType": "S"
         }]
+        "KeySchema": [{
+          "AttributeName": "questionId",
+          "KeyType": "HASH"
+        }],
       },
-      "KeySchema": [{
-        "AttributeName": "questionId",
-        "KeyType": "HASH"
-      }],
       "TableName": "LsvQuestionAnswer",
       "BillingMode": "PAY_PER_REQUEST"
     }
