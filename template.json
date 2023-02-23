@@ -27,7 +27,7 @@
         "Runtime": "nodejs18.x",
         "PackageType": "Zip",
         "CodeUri": "lsv-create-question-answer",
-        "Timeout": "10",
+        "Timeout": 10,
         "Events": {},
         "Role": {
           "Fn::GetAtt": [
