@@ -30,7 +30,7 @@
         "Events": {},
         "Role": {
           "Fn::GetAtt": [
-            "LsvCreateQuestionAnswerExtendedRole.Arn"
+            "LsvCreateQuestionAnswerExtendedRole","Arn"
           ]
         },
         "Description": "Create a question answer into a dymano table",
