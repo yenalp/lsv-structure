@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+  LsvQuestionAnswer:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+      - AttributeName: questionId
+        AttributeType: S
+      KeySchema:
+      - AttributeName: questionId
+        KeyType: HASH
+      TableName: LsvQuestionAnswer
+      BillingMode: PAY_PER_REQUEST
+  LsvCreateQuestionAnswerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: nodejs18.x
+      PackageType: Zip
+      CodeUri: lsv-create-question-answer
+      Timeout: 10
+      Events: {}
+      Role:
+        Fn::GetAtt:
+        - LsvCreateQuestionAnswerExtendedRole
+        - Arn
+      Description: Create a question answer into a dymano table
+      Tags:
+        lsvserverlessrsc: lambda
+      Environment:
+        Variables:
+          DYNAMO_TABLE_NAME:
+            Ref: LsvQuestionAnswer
+      Policies:
+      - AWSCloudMapDiscoverInstanceAccess
+    DependsOn:
+    - LsvCreateQuestionAnswerExtendedRole
+  LsvCreateQuestionAnswerExtendedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: MoGetCognitoUserBySubFunction-InvokeFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - dynamodb:UpdateItem
+            - dynamodb:PutItem
+            Resource: "*"
+Outputs:
+  BucketName:
+    Value:
+      Ref: S3Bucket
+    Description: Name of the sample Amazon S3 bucket.
