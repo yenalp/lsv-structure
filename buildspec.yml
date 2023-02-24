@@ -9,7 +9,8 @@ phases:
     commands:
       - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "cd {}; npm install"
       - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "zip -qr ./zips/{} {};"
-      - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "sed 's/{}/s3:\/\/lsv-structure\/{}/g' template.yml > template-export.yml"
+      - cp template.yml template-export.yml
+      - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "sed 's/{}/s3:\/\/lsv-structure\/{}/g' template-export.yml > template-export.yml"
   build:
     commands:
       - aws s3 sync ./zips/ s3://lsv-structure
