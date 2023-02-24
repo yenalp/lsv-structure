@@ -3,39 +3,17 @@ version: 0.2
 phases:
   install:
     commands:
-      # Install dependencies needed for running tests
-      # - apk update
-      - #apk add nodejs nodejs-npm python3 python3-dev py3-pip gcc libc-dev libgcc musl-dev sed bash
-      - npm install
-
-      # Install dependencies for each lambda function mentioned in the template
-      - cat template.json | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "cd {}; npm install"
-
-      # Configure Docker
       - nohup /usr/local/bin/dockerd --host=unix:///var/run/docker.sock --host=tcp://127.0.0.1:2375 --storage-driver=overlay2&
-
-      # Upgrade AWS CLI to the latest version
-      - pip3 install --upgrade awscli
-
-      # Ensure AWS SAM CLI is installed
-      - pip3 install --user aws-sam-cli
-      - USER_BASE_PATH=$(python3 -m site --user-base)
-      - export PATH=$PATH:$USER_BASE_PATH/bin
-
+      - npm install
   pre_build:
     commands:
-      # Discover and run unit tests in the 'tests' directory
-      # - npm test
+      - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "cd {}; npm install"
+      - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "zip -qr ./.zips/{} {};"
   build:
     commands:
-      # Use AWS SAM to package the application by using AWS CloudFormation
-      #- aws s3 cp --recursive public/ s3://$WEBSITE_S3_BUCKET/public/ --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers
-      #- sed -i -e "s|assets/|$WEBSITE_S3_PREFIX/public/assets/|g" public/index.html
-      - aws cloudformation package --template-file template.json --s3-bucket lsv-structure --output-template-file template-export.json
+      - aws s3 sync ./zips/ s3://lsv-structure
   post_build:
     commands:
-      # Do not remove this statement. This command is required for AWS CodeStar projects.
-      # Update the AWS Partition, AWS Region, account ID and project ID in the project ARN on template-configuration.json file so AWS CloudFormation can tag project resources.
       #- sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' scripts/template-configuration.json
 
 artifacts:

@@ -1,0 +1,11 @@
+{
+  "name": "lsv-create-question-answer",
+  "version": "1.0.0",
+  "description": "Create Questions and answers",
+  "main": "app.mjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Paul Laney",
+  "license": "ISC"
+}

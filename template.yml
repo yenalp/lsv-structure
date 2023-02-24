@@ -19,8 +19,30 @@ Resources:
     Properties:
       Handler: app.handler
       Runtime: nodejs18.x
-      PackageType: Zip
       CodeUri: lsv-create-question-answer
+      Timeout: 10
+      Events: {}
+      Role:
+        Fn::GetAtt:
+        - LsvCreateQuestionAnswerExtendedRole
+        - Arn
+      Description: Create a question answer into a dymano table
+      Tags:
+        lsvserverlessrsc: lambda
+      Environment:
+        Variables:
+          DYNAMO_TABLE_NAME:
+            Ref: LsvQuestionAnswer
+      Policies:
+      - AWSCloudMapDiscoverInstanceAccess
+    DependsOn:
+    - LsvCreateQuestionAnswerExtendedRole
+  LsvGetQuestionAnswerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: nodejs18.x
+      CodeUri: lsv-get-question-anwsers
       Timeout: 10
       Events: {}
       Role:
