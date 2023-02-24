@@ -8,7 +8,7 @@ phases:
   pre_build:
     commands:
       - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "cd {}; npm install"
-      - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "zip -qr ./.zips/{} {};"
+      - cat template.yml | grep 'CodeUri' | sed 's/CodeUri://' | sed 's/[\/ ]//g' | xargs -t -i sh -c "zip -qr ./zips/{} {};"
   build:
     commands:
       - aws s3 sync ./zips/ s3://lsv-structure
