@@ -1,0 +1,12 @@
+{
+  "name": "lsv-structure",
+  "version": "1.0.0",
+  "description": "Lsv Code build structure",
+  "scripts": {},
+  "author": "Paul Laney",
+  "license": "ISC",
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
