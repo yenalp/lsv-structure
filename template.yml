@@ -20,7 +20,6 @@ Resources:
       Handler: app.handler
       Runtime: nodejs18.x
       CodeUri: lsv-create-question-answer
-      Timeout: 10
       Events: {}
       Role:
         Fn::GetAtt:
@@ -43,7 +42,6 @@ Resources:
       Handler: app.handler
       Runtime: nodejs18.x
       CodeUri: lsv-get-question-anwsers
-      Timeout: 10
       Events: {}
       Role:
         Fn::GetAtt:
