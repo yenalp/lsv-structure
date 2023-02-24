@@ -16,9 +16,9 @@ phases:
     commands:
       #- sed -i.bak 's/\$PARTITION\$/'${PARTITION}'/g;s/\$AWS_REGION\$/'${AWS_REGION}'/g;s/\$ACCOUNT_ID\$/'${ACCOUNT_ID}'/g;s/\$PROJECT_ID\$/'${PROJECT_ID}'/g' scripts/template-configuration.json
 
-artifacts:
-  type: zip
-  files:
-    - template-export.json
+# artifacts:
+#   type: zip
+#   files:
+#     - template-export.json
     # - template-configuration.json
 
