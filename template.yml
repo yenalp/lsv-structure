@@ -80,6 +80,7 @@ Resources:
             - logs:PutLogEvents
             - dynamodb:UpdateItem
             - dynamodb:PutItem
+            - lambda:TagResource
             Resource: "*"
 Outputs:
   BucketName:
