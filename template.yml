@@ -26,8 +26,6 @@ Resources:
         - LsvCreateQuestionAnswerExtendedRole
         - Arn
       Description: Create a question answer into a dymano table
-      Tags:
-        lsvserverlessrsc: lambda
       Environment:
         Variables:
           DYNAMO_TABLE_NAME:
@@ -48,8 +46,6 @@ Resources:
         - LsvCreateQuestionAnswerExtendedRole
         - Arn
       Description: Create a question answer into a dymano table
-      Tags:
-        lsvserverlessrsc: lambda
       Environment:
         Variables:
           DYNAMO_TABLE_NAME:
