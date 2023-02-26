@@ -45,7 +45,7 @@ Resources:
         Fn::GetAtt:
         - LsvCreateQuestionAnswerExtendedRole
         - Arn
-      Description: Create a question answer into a dymano table
+      Description:  Get a question answer into a dymano table
       Environment:
         Variables:
           DYNAMO_TABLE_NAME:
@@ -82,6 +82,92 @@ Resources:
             - dynamodb:PutItem
             - lambda:TagResource
             Resource: "*"
+  LsvApiGateway:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Description: Lsv Api Gateway
+      Name: MoAdminApi
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowCredentials: true
+        AllowHeaders:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+        AllowMethods:
+          - POST
+          - GET
+          - PUT
+        AllowOrigins:
+          - https://admin.lsv.paullaney.com.au
+          - https://lsv.paullaney.com.au
+        ExposeHeaders:
+          - Content-Type
+          - X-Amz-Date
+          - Authorization
+          - X-Api-Key
+        MaxAge: 200
+  lsvCreateQuestionAnswerRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      ApiKeyRequired: false
+      AuthorizationType: CUSTOM
+      OperationName: lsvCreateQuestionAnswerPost
+      RouteKey: GET /create/question-answer
+      Target: !Join 
+        - /
+        - - integrations
+          - !Ref lsvCreateQuestionAnswerPostPostIntegration
+      AuthorizerId: !Ref ApiAdminTokenAuthorizera
+  lsvCreateQuestionAnswerPostPostIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      CredentialsArn: !GetAtt LsvApiGatewayRole.Arn
+      ConnectionType: INTERNET
+      Description: Integration for lsvCreateQuestionAnswerRoute
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      PassthroughBehavior: WHEN_NO_MATCH
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: '29000'
+      IntegrationUri:
+        Fn::GetAtt:
+          - LsvCreateQuestionAnswerFunction
+          - Arn
+  LsvApiGatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+                - apigateway.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyName: LsvApiGatewayRole-InvokeFunctionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - states:*
+                Resource: '*'
+              - Effect: Allow
+                Action: lambda:invokeFunction
+                Resource: '*'
 Outputs:
   BucketName:
     Value:
