@@ -54,6 +54,20 @@ Resources:
       - AWSCloudMapDiscoverInstanceAccess
     DependsOn:
     - LsvCreateQuestionAnswerExtendedRole
+  lsvAuthenticatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      Runtime: nodejs18.x
+      CodeUri: lsv-authorizer
+      Events: {}
+      Description: Lsv Token Authenticator
+      Environment:
+        Variables:
+          ACCESS_TOKEN: "test"
+          SERVICE_VARIABLES: ACCESS_TOKEN
+      Policies:
+        - AWSCloudMapDiscoverInstanceAccess
   LsvCreateQuestionAnswerExtendedRole:
     Type: AWS::IAM::Role
     Properties:
@@ -116,7 +130,7 @@ Resources:
       AuthorizationType: CUSTOM
       OperationName: lsvCreateQuestionAnswerPost
       RouteKey: GET /create/question-answer
-      Target: !Join 
+      Target: !Join
         - /
         - - integrations
           - !Ref lsvCreateQuestionAnswerPostPostIntegration
@@ -133,10 +147,10 @@ Resources:
       PassthroughBehavior: WHEN_NO_MATCH
       PayloadFormatVersion: '2.0'
       TimeoutInMillis: '29000'
-      IntegrationUri:
-        Fn::GetAtt:
-          - LsvCreateQuestionAnswerFunction
-          - Arn
+      IntegrationUri: !Sub
+        - >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
+        - LambdaFunction: !GetAtt LsvCreateQuestionAnswerFunction.Arn
   LsvApiGatewayRole:
     Type: AWS::IAM::Role
     Properties:
@@ -168,6 +182,21 @@ Resources:
               - Effect: Allow
                 Action: lambda:invokeFunction
                 Resource: '*'
+  LsvTokenAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      AuthorizerResultTtlInSeconds: 0
+      Name: LsvTokenAuthorizer
+      ApiId: !Ref LsvApiGateway
+      AuthorizerType: REQUEST
+      AuthorizerCredentialsArn: !GetAtt LsvApiGatewayRole.Arn
+      AuthorizerPayloadFormatVersion: '2.0'
+      IdentitySource:
+        - $request.header.authorization
+      AuthorizerUri: !Sub
+        - >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
+        - LambdaFunction: !GetAtt ApiAdminTokenAuthenticatorFunction.Arn
 Outputs:
   BucketName:
     Value:
