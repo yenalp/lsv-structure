@@ -196,7 +196,7 @@ Resources:
       AuthorizerUri: !Sub
         - >-
           arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
-        - LambdaFunction: !GetAtt ApiAdminTokenAuthenticatorFunction.Arn
+        - LambdaFunction: !GetAtt LsvAuthenticatorFunction.Arn
 Outputs:
   BucketName:
     Value:
