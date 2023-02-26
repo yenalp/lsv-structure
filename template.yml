@@ -134,7 +134,7 @@ Resources:
         - /
         - - integrations
           - !Ref lsvCreateQuestionAnswerPostPostIntegration
-      AuthorizerId: !Ref ApiAdminTokenAuthorizera
+      AuthorizerId: !Ref LsvTokenAuthorizera
   lsvCreateQuestionAnswerPostPostIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
