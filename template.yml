@@ -83,7 +83,7 @@ Resources:
           Action:
           - sts:AssumeRole
       Policies:
-      - PolicyName: MoGetCognitoUserBySubFunction-InvokeFunctionPolicy
+      - PolicyName: LsvExtendRoleInvokeFunctionPolicy
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -100,7 +100,7 @@ Resources:
     Type: AWS::ApiGatewayV2::Api
     Properties:
       Description: Lsv Api Gateway
-      Name: MoAdminApi
+      Name: LsvApiGateway
       ProtocolType: HTTP
       CorsConfiguration:
         AllowCredentials: true
