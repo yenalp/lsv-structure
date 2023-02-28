@@ -129,7 +129,7 @@ Resources:
       ApiKeyRequired: false
       AuthorizationType: CUSTOM
       OperationName: lsvCreateQuestionAnswerPost
-      RouteKey: GET /create/question-answer
+      RouteKey: POST /question-answer
       Target: !Join
         - /
         - - integrations
@@ -151,6 +151,35 @@ Resources:
         - >-
           arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
         - LambdaFunction: !GetAtt LsvCreateQuestionAnswerFunction.Arn
+  lsvGetQuestionAnswerRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      ApiKeyRequired: false
+      AuthorizationType: CUSTOM
+      OperationName: lsvGetQuestionAnswerPost
+      RouteKey: GET /question-answer
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref lsvGetQuestionAnswerPostPostIntegration
+      AuthorizerId: !Ref LsvTokenAuthorizer
+  lsvGetQuestionAnswerPostPostIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      CredentialsArn: !GetAtt LsvApiGatewayRole.Arn
+      ConnectionType: INTERNET
+      Description: Integration for lsvGetQuestionAnswerRoute
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      PassthroughBehavior: WHEN_NO_MATCH
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: '29000'
+      IntegrationUri: !Sub
+        - >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
+        - LambdaFunction: !GetAtt LsvGetQuestionAnswerFunction.Arn
   LsvApiGatewayRole:
     Type: AWS::IAM::Role
     Properties:
