@@ -1,4 +1,4 @@
-const { DynamoDBClient, PutItemCommand } = require("@aws-sdk/client-dynamodb");
+import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
 const REGION = "ap-southesast-2";
 const TABLE_NAME = "LsvQuestionAnswer";
