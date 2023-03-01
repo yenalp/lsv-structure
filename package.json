@@ -5,8 +5,7 @@
   "scripts": {},
   "author": "Paul Laney",
   "license": "ISC",
-  "dependencies": {
-  },
   "devDependencies": {
+    "eslint": "^8.35.0"
   }
 }
