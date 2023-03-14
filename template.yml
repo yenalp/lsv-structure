@@ -95,6 +95,7 @@ Resources:
             - dynamodb:UpdateItem
             - dynamodb:PutItem
             - lambda:TagResource
+            - lambda:UpdateFunctionCode
             Resource: "*"
   LsvApiGateway:
     Type: AWS::ApiGatewayV2::Api
