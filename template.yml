@@ -18,6 +18,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.handler
+      FunctionName: LsvCreateQuestionAnswerFunction
       Runtime: nodejs18.x
       CodeUri: lsv-create-question-answer
       Events: {}
@@ -38,6 +39,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.handler
+      FunctionName: LsvGetQuestionAnswerFunction
       Runtime: nodejs18.x
       CodeUri: lsv-get-question-anwsers
       Events: {}
@@ -58,6 +60,9 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       Handler: app.handler
+      FunctionName: lsvAuthenticatorFunction
+      Description: Authenticator for lsv Gateway
+      Environment:
       Runtime: nodejs18.x
       CodeUri: lsv-authorizer
       Events: {}
