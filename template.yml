@@ -61,6 +61,10 @@ Resources:
       Runtime: nodejs18.x
       CodeUri: lsv-authorizer
       Events: {}
+      Role:
+        Fn::GetAtt:
+        - LsvCreateQuestionAnswerExtendedRole
+        - Arn
       Description: Lsv Token Authenticator
       Environment:
         Variables:
