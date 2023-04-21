@@ -337,14 +337,6 @@ Resources:
           - >-
             arn:aws:lambda:${AWS::Region}:627373841688:function:${LambdaFunction}
           - LambdaFunction: LsvCognitoPostConfirmation
-        PreAuthentication: !Sub
-          - >-
-            arn:aws:lambda:${AWS::Region}:627373841688:function:${LambdaFunction}
-          - LambdaFunction: LsvCognitoPreAuthentication
-        PostAuthentication: !Sub
-          - >-
-            arn:aws:lambda:${AWS::Region}:627373841688:function:${LambdaFunction}
-          - LambdaFunction: LsvCognitoPostAuthentication
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -406,7 +398,6 @@ Resources:
       Handler: index.handler
       Runtime: nodejs18.x
       InlineCode: |-
-        const aws = require('aws-sdk');
               exports.handler = async (event, context, callback) => {
 
                 event.response = {
@@ -464,348 +455,41 @@ Resources:
       Handler: index.handler
       Runtime: nodejs18.x
       InlineCode: |-
-        const AWS = require('aws-sdk');
-        const cognito = new AWS.CognitoIdentityServiceProvider();
+        import { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } from "@aws-sdk/client-cognito-identity-provider";
 
-        exports.handler = async (event, context, callback) => {
-            const forceUserAutoConfirm = event.request.userAttributes["cognito:user_status"] === "EXTERNAL_PROVIDER";
+        const region = 'ap-southeast-2';
 
-            console.log(forceUserAutoConfirm);
+        export const handler = async (event) => {
 
-            if (forceUserAutoConfirm) {
-                const params =  {
-                    UserAttributes: [
-                        {
-                            Name: "email_verified",
-                            Value: "true"
-                        }
-                    ],
-                    UserPoolId: event.userPoolId,
-                    Username: event.userName
-                }
+          const client = new CognitoIdentityProviderClient({
+           region: region
+          });
 
-                cognito.adminUpdateUserAttributes(params, function(err, data) {
-                    if (err) console.log({err, data});
-                    callback(null, event);
-                });
-            }
+        const input = {
+          UserPoolId: event.userPoolId, // required
+          Username: event.userName, // required
+          UserAttributes: [ // AttributeListType // required
+            { // AttributeType
+             Name: "email_verified",
+             Value: "true"
+            },
+          ]
+        };
+        const command = new AdminUpdateUserAttributesCommand(input);
+        // const response = await client.send(command);
 
-            callback(null, event);
-            return event;
-        }
+          try {
+            const response = await client.send(command);
+            console.log("Post Confirmation:", response);
+
+          } catch (error) {
+            console.error("Post Confirmation:", error);
+          }
+
+        };
       Timeout: 10
       Events: {}
       Role: !GetAtt LsvCognitoPostConfirmationExtendedRole.Arn
-  LsvCognitoPreAuthenticationPermissionCognito:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - LsvCognitoPreAuthentication
-      - LsvCognitoUserPool
-    Properties:
-      FunctionName: !GetAtt LsvCognitoPreAuthentication.Arn
-      Action: lambda:InvokeFunction
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !GetAtt LsvCognitoUserPool.Arn
-  LsvCognitoPreAuthenticationExtendedRole:
-    Type: AWS::IAM::Role
-    Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: LsvCognitoPreAuthentication-InvokeFunctionPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - cognito-idp:AdminUpdateUserAttributes
-                  - cognito-idp:AdminDisableUser
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                Resource: '*'
-  LsvCognitoPreAuthentication:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: LsvCognitoPreAuthentication
-      Handler: index.handler
-      Runtime: nodejs18.x
-      InlineCode: |-
-        const AWS = require('aws-sdk');
-        const ddb = new AWS.DynamoDB.DocumentClient();
-        const failedAttemptsAllowed = process.env.FAILED_ATTEMPTS_ALLOWED;
-        const tableName = process.env.TABLE_NAME;
-        const cognito = new AWS.CognitoIdentityServiceProvider();
-
-        exports.handler = async (event, context, callback) => {
-            const userName = event.userName;
-            const userPoolId = event.userPoolId ;
-            let count = 0;
-            let recordExist = false;
-
-            console.log("Login Count");
-
-            await readMessage(tableName, userName).then((data) => {
-                if (typeof data["Item"] !== "undefined") {
-                    recordExist = true;
-                    count = data["Item"]["Details"]["loginAttempts"];
-                }
-            }).catch((err) => {
-                  console.log(err);
-            });
-
-            // Increase counter
-            count = count+1;
-
-            // If there are not records lets create one
-            if (!recordExist) {
-                // If no records found create the first one
-                await createMessage(tableName, userName).then(() => {
-                    console.log(`Inserted: ${userName}`);
-                }).catch((err) => {
-                    console.log(`Insert Error: ${err}`);
-                });
-            } else {
-                // If recored exists update counter
-                await updateMessage(tableName, userName, count).then(() => {
-                    console.log(`Updated: ${userName}`);
-                }).catch((err) => {
-                    console.log(`Update Error: ${err}`);
-                });
-            }
-
-            // Check the current count
-            if (count >= failedAttemptsAllowed) {
-                console.log("Your account is now locked");
-
-                // Disable user account
-                const disbaleUserParams = {
-                  UserPoolId: userPoolId,
-                  Username: userName
-                };
-
-                cognito.adminDisableUser(disbaleUserParams, function(err, data) {
-                  if (err) {
-                    console.log(err, err.stack);
-                  } else {
-                    console.log(data);
-                  }
-                });
-
-                callback(null, event);
-                return event;
-            }
-
-            callback(null, event);
-            return event;
-
-        };
-
-        // Update a new message
-        function updateMessage(tableName, userName, count) {
-           console.log(`Login Count - Update Message with count ${count}`);
-           const params = {
-               TableName: tableName,
-                Key: {
-                    "Id": userName
-               },
-               AttributeUpdates:{
-                   "Details" : { "Action": "PUT", "Value":
-                        {
-                            "loginAttempts" : count
-                        }
-                    }
-               }
-           };
-           return ddb.update(params).promise();
-        }
-
-
-        // Create a new message
-        function createMessage(tableName, userName) {
-           console.log("Login Count - Create Message");
-           const params = {
-               TableName: tableName,
-               Item: {
-                   "Id": userName,
-                   "Details" : {
-                       "loginAttempts" : 1
-                   }
-               }
-           };
-           return ddb.put(params).promise();
-        }
-
-        // Get message by cognito username
-        function readMessage(tableName, userName) {
-            console.log("Login Count - Get Message");
-            const params = {
-               TableName: tableName,
-               Key: {
-                   "Id": userName
-               }
-            };
-           return ddb.get(params).promise();
-        }
-      Timeout: 10
-      Events: &ref_1 {}
-      Role: !GetAtt LsvCognitoPreAuthenticationExtendedRole.Arn
-      Environment:
-        Variables:
-          FAILED_ATTEMPTS_ALLOWED: 5
-          TABLE_NAME: LsvCognitoUserLoginCountDynamoDBTable
-  LsvCognitoPostAuthenticationPermissionCognito:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - LsvCognitoPostAuthentication
-      - LsvCognitoUserPool
-    Properties:
-      FunctionName: !GetAtt LsvCognitoPostAuthentication.Arn
-      Action: lambda:InvokeFunction
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !GetAtt LsvCognitoUserPool.Arn
-  LsvCognitoPostAuthenticationExtendedRole:
-    Type: AWS::IAM::Role
-    Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: LsvCognitoPostAuthentication-InvokeFunctionPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - cognito-idp:AdminUpdateUserAttributes
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                Resource: '*'
-  LsvCognitoPostAuthentication:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: LsvCognitoPostAuthentication
-      Handler: index.handler
-      Runtime: nodejs18.x
-      InlineCode: |-
-        const AWS = require('aws-sdk');
-        const ddb = new AWS.DynamoDB.DocumentClient();
-        const failedAttemptsCount = process.env.FAILED_ATTEMPTS_COUNT;
-        const tableName = process.env.TABLE_NAME;
-        const cognito = new AWS.CognitoIdentityServiceProvider();
-
-        exports.handler = async (event, context, callback) => {
-            const userName = event.userName;
-            const forceUserAutoConfirm = event.request.userAttributes["cognito:user_status"] === "EXTERNAL_PROVIDER";
-            let count = 0;
-            let recordExist = false;
-
-            await readMessage(tableName, userName).then((data) => {
-                if (typeof data["Item"] !== "undefined") {
-                    recordExist = true;
-                    count = data["Item"]["Details"]["loginAttempts"];
-                }
-            }).catch((err) => {
-                  console.log(err);
-            });
-
-            // If there are not records lets create one
-            if (!recordExist) {
-                console.log(`No record was found for user: ${userName}`)
-            } else {
-                // If recored exists update counter
-                await updateMessage(tableName, userName, count).then(() => {
-                    console.log(`Updated: ${userName}`);
-                }).catch((err) => {
-                    console.log(`Update Error: ${err}`);
-                });
-            }
-
-            // Make sure that a users account is verified
-
-            if (forceUserAutoConfirm) {
-                const params =  {
-                    UserAttributes: [
-                        {
-                            Name: "email_verified",
-                            Value: "true"
-                        }
-                    ],
-                    UserPoolId: event.userPoolId,
-                    Username: event.userName
-                }
-
-                cognito.adminUpdateUserAttributes(params, function(err, data) {
-                    if (err) console.log({err, data});
-                });
-            }
-
-
-            callback(null, event);
-            return event;
-        };
-
-        // Update a new message
-        function updateMessage(tableName, userName) {
-        console.log(`Login count - Update Message with count 0`);
-           const params = {
-               TableName: tableName,
-                Key: {
-                    "Id": userName
-               },
-               AttributeUpdates:{
-                   "Details" : { "Action": "PUT", "Value":
-                        {
-                            "loginAttempts" : 0
-                        }
-                    }
-               }
-           };
-           return ddb.update(params).promise();
-        }
-
-        // Get message by cognito username
-        function readMessage(tableName, userName) {
-            console.log("Login count - Get Message");
-            const params = {
-               TableName: tableName,
-               Key: {
-                   "Id": userName
-               }
-            };
-           return ddb.get(params).promise();
-        }
-      Timeout: 10
-      Events: *ref_1
-      Role: !GetAtt LsvCognitoPostAuthenticationExtendedRole.Arn
-      Environment:
-        Variables:
-          FAILED_ATTEMPTS_ALLOWED: 5
-          TABLE_NAME: LsvCognitoUserLoginCountDynamoDBTable
   LsvCognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
