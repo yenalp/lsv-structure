@@ -420,8 +420,6 @@ Resources:
               };
       Timeout: 10
       Events: {}
-      Layers: &ref_0
-        - '{{resolve:ssm:/App/Movember/Layers/MoLambdaLayer}}'
       Role: !GetAtt LsvCognitoPreSignUpExtendedRole.Arn
   LsvCognitoPostConfirmationPermissionCognito:
     Type: AWS::Lambda::Permission
