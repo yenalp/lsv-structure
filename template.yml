@@ -456,11 +456,8 @@ Resources:
       Runtime: nodejs18.x
       InlineCode: |-
         import { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } from "@aws-sdk/client-cognito-identity-provider";
-
         const region = 'ap-southeast-2';
-
-        export const handler = async (event) => {
-
+        export const handler = async (event, context, callback) => {
           const client = new CognitoIdentityProviderClient({
            region: region
           });
@@ -481,9 +478,10 @@ Resources:
           try {
             const response = await client.send(command);
             console.log("Post Confirmation:", response);
-
+            callback(null, event);
           } catch (error) {
             console.error("Post Confirmation:", error);
+            callback(null, event);
           }
 
         };
