@@ -1,6 +1,6 @@
 import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
 
-const REGION = "ap-southesast-2";
+const REGION = "ap-southeast-2";
 const TABLE_NAME = "LsvQuestionAnswer";
 
 // Export the handler
@@ -11,11 +11,20 @@ export const handler = async (event) => {
   const params = {
     TableName: TABLE_NAME,
     Item: {
-      id: { S: "123" },
-      name: { S: "John Doe" },
-      age: { N: "30" },
-      email: { S: "john.doe@example.com" },
-    },
+      "questionId" : {S:"123"},
+      "question" : {S: "this is a question"},
+      "correctAnswer" : {S : "3"},
+      "media": {S : "https://somepath" },
+      "answers" : {M : 
+        {
+          1 : { S: "Answer One"} ,
+          2 : { S:  "Answer Two"},
+          3 : { S:  "Answer Three"},
+          4 : { S:  "Answer Four"},
+          5 : { S:  "Answer Five"},
+        }
+      }
+    }
   };
 
   const command = new PutItemCommand(params);

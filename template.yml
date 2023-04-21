@@ -14,6 +14,23 @@ Resources:
         KeyType: HASH
       TableName: LsvQuestionAnswer
       BillingMode: PAY_PER_REQUEST
+  LsvSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      FunctionName: LsvSignUpFunction
+      Runtime: nodejs18.x
+      CodeUri: lsv-sign-up
+      Events: {}
+      Role:
+        Fn::GetAtt:
+        - LsvSignUpExtendedRole
+        - Arn
+      Description: Signs a user up for cognito
+      Policies:
+      - AWSCloudMapDiscoverInstanceAccess
+    DependsOn:
+    - LsvSignUpExtendedRole
   LsvCreateQuestionAnswerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -105,6 +122,33 @@ Resources:
             - dynamodb:PutItem
             - lambda:TagResource
             - lambda:UpdateFunctionCode
+            - lambda:*
+            Resource: "*"
+  LsvSignUpExtendedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: LsvExtendRoleSignUpFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - cognito-identity:*
             - lambda:*
             Resource: "*"
   LsvApiGateway:
