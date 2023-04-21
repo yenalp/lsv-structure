@@ -404,6 +404,7 @@ Resources:
     Properties:
       FunctionName: LsvCognitoPreSignUp
       Handler: index.handler
+      Runtime: nodejs18.x
       InlineCode: |-
         const aws = require('aws-sdk');
               exports.handler = async (event, context, callback) => {
@@ -463,6 +464,7 @@ Resources:
     Properties:
       FunctionName: LsvCognitoPostConfirmation
       Handler: index.handler
+      Runtime: nodejs18.x
       InlineCode: |-
         const AWS = require('aws-sdk');
         const cognito = new AWS.CognitoIdentityServiceProvider();
@@ -542,6 +544,7 @@ Resources:
     Properties:
       FunctionName: LsvCognitoPreAuthentication
       Handler: index.handler
+      Runtime: nodejs18.x
       InlineCode: |-
         const AWS = require('aws-sdk');
         const ddb = new AWS.DynamoDB.DocumentClient();
@@ -711,6 +714,7 @@ Resources:
     Properties:
       FunctionName: LsvCognitoPostAuthentication
       Handler: index.handler
+      Runtime: nodejs18.x
       InlineCode: |-
         const AWS = require('aws-sdk');
         const ddb = new AWS.DynamoDB.DocumentClient();
