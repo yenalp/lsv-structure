@@ -495,7 +495,6 @@ Resources:
         }
       Timeout: 10
       Events: {}
-      Layers: *ref_0
       Role: !GetAtt LsvCognitoPostConfirmationExtendedRole.Arn
   LsvCognitoPreAuthenticationPermissionCognito:
     Type: AWS::Lambda::Permission
@@ -662,7 +661,6 @@ Resources:
         }
       Timeout: 10
       Events: &ref_1 {}
-      Layers: *ref_0
       Role: !GetAtt LsvCognitoPreAuthenticationExtendedRole.Arn
       Environment:
         Variables:
@@ -803,7 +801,6 @@ Resources:
         }
       Timeout: 10
       Events: *ref_1
-      Layers: *ref_0
       Role: !GetAtt LsvCognitoPostAuthenticationExtendedRole.Arn
       Environment:
         Variables:
