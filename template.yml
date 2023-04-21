@@ -177,6 +177,35 @@ Resources:
           - Authorization
           - X-Api-Key
         MaxAge: 200
+  lsvSignUpRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      ApiKeyRequired: false
+      AuthorizationType: CUSTOM
+      OperationName: lsvSignUpPost
+      RouteKey: POST /sign-up
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref lsvSignUpPostPostIntegration
+      AuthorizerId: !Ref LsvTokenAuthorizer
+  lsvSignUpPostPostIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      CredentialsArn: !GetAtt LsvApiGatewayRole.Arn
+      ConnectionType: INTERNET
+      Description: Integration for lsvSignUpRoute
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      PassthroughBehavior: WHEN_NO_MATCH
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: '29000'
+      IntegrationUri: !Sub
+        - >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
+        - LambdaFunction: !GetAtt LsvSignUpFunction.Arn
   lsvCreateQuestionAnswerRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
