@@ -594,7 +594,7 @@ Resources:
             const params = {
               TableName: TABLE_NAME,
               Item: {
-                "questionId" : {S:"123"},
+                "id" : {S:"123"},
                 "fullname" : {S: "${fullName}"},
                 }
               }
