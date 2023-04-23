@@ -447,7 +447,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: LsvCognitoPostConfirmation
-      Handler: index.mjs
+      Handler: index.handler
       Runtime: nodejs18.x
       InlineCode: |-
         import { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } from "@aws-sdk/client-cognito-identity-provider";
@@ -570,7 +570,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: LsvCognitoPostAuthentication
-      Handler: index.mjs
+      Handler: index.handler
       Runtime: nodejs18.x
       InlineCode: |-
           import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
