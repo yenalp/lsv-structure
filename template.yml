@@ -452,7 +452,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: LsvCognitoPostConfirmation
-      Handler: index.handler
+      Handler: index.mjs
       Runtime: nodejs18.x
       InlineCode: |-
         import { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } from "@aws-sdk/client-cognito-identity-provider";
@@ -521,10 +521,10 @@ Resources:
       Type: String
       Value: !Ref LsvCognitoUserPoolClient
       Description: Lambda ARN for LsvCognitoUserPoolClient
-  LsvCognitoUserLoginCountDynamoDBTable:
+  LsvCognitoUserDynamoDBTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: LsvCognitoUserLoginCountDynamoDBTable
+      TableName: LsvCognitoUserDynamoDBTable
       BillingMode: PAY_PER_REQUEST
       KeySchema:
         - AttributeName: Id
@@ -532,6 +532,92 @@ Resources:
       AttributeDefinitions:
         - AttributeName: Id
           AttributeType: S
+  LsvCognitoPostAuthenticationPermissionCognito:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - LsvCognitoPostAuthentication
+      - MoCognitoUserPool
+    Properties:
+      FunctionName: !GetAtt LsvCognitoPostAuthentication.Arn
+      Action: lambda:InvokeFunction
+      Principal: cognito-idp.amazonaws.com
+      SourceArn: !GetAtt MoCognitoUserPool.Arn
+  LsvCognitoPostAuthenticationExtendedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: LsvCognitoPostAuthentication-InvokeFunctionPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - cognito-idp:AdminUpdateUserAttributes
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource: '*'
+  LsvCognitoPostAuthentication:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: LsvCognitoPostAuthentication
+      Handler: index.mjs
+      Runtime: nodejs18.x
+      InlineCode: |-
+          import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+
+          const REGION = "ap-southeast-2";
+          const TABLE_NAME = "LsvQuestionAnswer";
+
+          // Export the handler
+          export const handler = async (event) => {
+            console.log(event);
+            const userName = event.userName;
+            const email = event.email;
+            const fullName = event.fullname;
+
+            const client = new DynamoDBClient({ region: REGION });
+            const params = {
+              TableName: TABLE_NAME,
+              Item: {
+                "questionId" : {S:"123"},
+                "fullname" : {S: "${fullName}"},
+                }
+              }
+            };
+
+            const command = new PutItemCommand(params);
+
+            try {
+              const data = await client.send(command);
+              console.log("Item inserted successfully:", data);
+              return { statusCode: 200, body: "Item inserted successfully" };
+            } catch (error) {
+              console.error("Error inserting item:", error);
+              return { statusCode: 500, body: "Error inserting item" };
+            }
+          };
+      Timeout: 10
+      Events: *ref_1
+      Role: !GetAtt LsvCognitoPostAuthenticationExtendedRole.Arn
+      Environment:
+        Variables:
+          FAILED_ATTEMPTS_ALLOWED: 5
+          TABLE_NAME: LsvCognitoUserDynamoDBTable
 Outputs:
   BucketName:
     Value:
