@@ -612,7 +612,7 @@ Resources:
             }
           };
       Timeout: 10
-      Events: *ref_1
+      Events: {}
       Role: !GetAtt LsvCognitoPostAuthenticationExtendedRole.Arn
       Environment:
         Variables:
