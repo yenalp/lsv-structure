@@ -349,11 +349,6 @@ Resources:
           RequireSymbols: false
           RequireUppercase: false
           TemporaryPasswordValidityDays: 1
-      Schema:
-        - Name: name
-          AttributeDataType: String
-          Mutable: true
-          Required: true
   LsvCognitoPreSignUpPermissions:
     Type: AWS::Lambda::Permission
     DependsOn:
