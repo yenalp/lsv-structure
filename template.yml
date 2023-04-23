@@ -536,12 +536,12 @@ Resources:
     Type: AWS::Lambda::Permission
     DependsOn:
       - LsvCognitoPostAuthentication
-      - MoCognitoUserPool
+      - LsvCognitoUserPool
     Properties:
       FunctionName: !GetAtt LsvCognitoPostAuthentication.Arn
       Action: lambda:InvokeFunction
       Principal: cognito-idp.amazonaws.com
-      SourceArn: !GetAtt MoCognitoUserPool.Arn
+      SourceArn: !GetAtt LsvCognitoUserPool.Arn
   LsvCognitoPostAuthenticationExtendedRole:
     Type: AWS::IAM::Role
     Properties:
