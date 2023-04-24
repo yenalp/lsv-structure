@@ -337,10 +337,6 @@ Resources:
           - >-
             arn:aws:lambda:${AWS::Region}:627373841688:function:${LambdaFunction}
           - LambdaFunction: LsvCognitoPostConfirmation
-        PostAuthentication: !Sub
-          - >-
-            arn:aws:lambda:${AWS::Region}:627373841688:function:${LambdaFunction}
-          - LambdaFunction: LsvCognitoPostAuthentication
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -442,6 +438,9 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                   - cognito-idp:AdminUpdateUserAttributes
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
                 Resource: '*'
   LsvCognitoPostConfirmation:
     Type: AWS::Serverless::Function
@@ -451,29 +450,57 @@ Resources:
       Runtime: nodejs18.x
       InlineCode: |-
         import { CognitoIdentityProviderClient, AdminUpdateUserAttributesCommand } from "@aws-sdk/client-cognito-identity-provider";
+        import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+
         const region = 'ap-southeast-2';
+        const tableName = process.env.TABLE_NAME;
+
         export const handler = async (event, context, callback) => {
+
+          const email = event["request"]["userAttributes"]["email"];
+          const fullName = event["request"]["userAttributes"]["custom:full_name"];
           const client = new CognitoIdentityProviderClient({
            region: region
           });
 
-        const input = {
-          UserPoolId: event.userPoolId, // required
-          Username: event.userName, // required
-          UserAttributes: [ // AttributeListType // required
-            { // AttributeType
-             Name: "email_verified",
-             Value: "true"
-            },
-          ]
-        };
-        const command = new AdminUpdateUserAttributesCommand(input);
-        // const response = await client.send(command);
+          const input = {
+            UserPoolId: event.userPoolId, // required
+            Username: event.userName, // required
+            UserAttributes: [ // AttributeListType // required
+              { // AttributeType
+               Name: "email_verified",
+               Value: "true"
+              },
+            ]
+          };
+          const command = new AdminUpdateUserAttributesCommand(input);
 
           try {
             const response = await client.send(command);
-            console.log("Post Confirmation:", response);
-            callback(null, event);
+
+            const clientDyno = new DynamoDBClient({ region: region });
+            const params = {
+              TableName: tableName,
+              Item: {
+                "id" : {S:"123"},
+                "fullname" : {S: fullName},
+                "email" : {S: email},
+                "completed-quize:": {S: "false"},
+                "attempts" : {S: "0"}
+                }
+            };
+
+            const commandDyno = new PutItemCommand(params);
+
+            try {
+              const data = await clientDyno.send(commandDyno);
+              console.log("Post Confirmation:", response);
+              callback(null, event);
+            } catch (error) {
+              console.error("Post Confirmation:", error);
+              callback(null, event);
+            }
+
           } catch (error) {
             console.error("Post Confirmation:", error);
             callback(null, event);
@@ -483,6 +510,9 @@ Resources:
       Timeout: 10
       Events: {}
       Role: !GetAtt LsvCognitoPostConfirmationExtendedRole.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: LsvCognitoUserDynamoDBTable
   LsvCognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
@@ -527,92 +557,6 @@ Resources:
       AttributeDefinitions:
         - AttributeName: Id
           AttributeType: S
-  LsvCognitoPostAuthenticationPermissionCognito:
-    Type: AWS::Lambda::Permission
-    DependsOn:
-      - LsvCognitoPostAuthentication
-      - LsvCognitoUserPool
-    Properties:
-      FunctionName: !GetAtt LsvCognitoPostAuthentication.Arn
-      Action: lambda:InvokeFunction
-      Principal: cognito-idp.amazonaws.com
-      SourceArn: !GetAtt LsvCognitoUserPool.Arn
-  LsvCognitoPostAuthenticationExtendedRole:
-    Type: AWS::IAM::Role
-    Properties:
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: LsvCognitoPostAuthentication-InvokeFunctionPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - cognito-idp:AdminUpdateUserAttributes
-                  - dynamodb:GetItem
-                  - dynamodb:PutItem
-                  - dynamodb:UpdateItem
-                Resource: '*'
-  LsvCognitoPostAuthentication:
-    Type: AWS::Serverless::Function
-    Properties:
-      FunctionName: LsvCognitoPostAuthentication
-      Handler: index.handler
-      Runtime: nodejs18.x
-      InlineCode: |-
-          import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
-
-          const REGION = "ap-southeast-2";
-          const TABLE_NAME = "LsvQuestionAnswer";
-
-          // Export the handler
-          export const handler = async (event) => {
-            console.log(event);
-            const userName = event.userName;
-            const email = event.email;
-            const fullName = event.fullname;
-
-            const client = new DynamoDBClient({ region: REGION });
-            const params = {
-              TableName: TABLE_NAME,
-              Item: {
-                "id" : {S:"123"},
-                "fullname" : {S: "${fullName}"},
-                }
-              }
-            };
-
-            const command = new PutItemCommand(params);
-
-            try {
-              const data = await client.send(command);
-              console.log("Item inserted successfully:", data);
-              return { statusCode: 200, body: "Item inserted successfully" };
-            } catch (error) {
-              console.error("Error inserting item:", error);
-              return { statusCode: 500, body: "Error inserting item" };
-            }
-          };
-      Timeout: 10
-      Events: {}
-      Role: !GetAtt LsvCognitoPostAuthenticationExtendedRole.Arn
-      Environment:
-        Variables:
-          FAILED_ATTEMPTS_ALLOWED: 5
-          TABLE_NAME: LsvCognitoUserDynamoDBTable
 Outputs:
   BucketName:
     Value:
