@@ -150,6 +150,7 @@ Resources:
             - logs:PutLogEvents
             - cognito-identity:*
             - lambda:*
+            - cognito-idp:AdminInitiateAuth
             Resource: "*"
   LsvApiGateway:
     Type: AWS::ApiGatewayV2::Api
@@ -459,6 +460,7 @@ Resources:
 
           const email = event["request"]["userAttributes"]["email"];
           const fullName = event["request"]["userAttributes"]["custom:full_name"];
+          const uid = event["request"]["userAttributes"]["custom:uid"]
           const client = new CognitoIdentityProviderClient({
            region: region
           });
@@ -482,7 +484,7 @@ Resources:
             const params = {
               TableName: tableName,
               Item: {
-                "id" : {S:"123"},
+                "Id" : {S: uid},
                 "fullname" : {S: fullName},
                 "email" : {S: email},
                 "completed-quize:": {S: "false"},
@@ -495,9 +497,10 @@ Resources:
             try {
               const data = await clientDyno.send(commandDyno);
               console.log("Post Confirmation:", response);
+              console.log("Insert Item:", data);
               callback(null, event);
             } catch (error) {
-              console.error("Post Confirmation:", error);
+              console.error("Insert Item:", error);
               callback(null, event);
             }
 
