@@ -14,6 +14,23 @@ Resources:
         KeyType: HASH
       TableName: LsvQuestionAnswer
       BillingMode: PAY_PER_REQUEST
+  LsvLoginFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      FunctionName: LsvLoginFunction
+      Runtime: nodejs18.x
+      CodeUri: lsv-sign-up
+      Events: {}
+      Role:
+        Fn::GetAtt:
+        - LsvLoginExtendedRole
+        - Arn
+      Description: Signs a user up for cognito
+      Policies:
+      - AWSCloudMapDiscoverInstanceAccess
+    DependsOn:
+    - LsvLoginExtendedRole
   LsvSignUpFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -124,6 +141,34 @@ Resources:
             - lambda:UpdateFunctionCode
             - lambda:*
             Resource: "*"
+  LsvLoginExtendedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: LsvExtendRoleLoginFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - cognito-identity:*
+            - lambda:*
+            - cognito-idp:AdminInitiateAuth
+            Resource: "*"
   LsvSignUpExtendedRole:
     Type: AWS::IAM::Role
     Properties:
@@ -210,6 +255,35 @@ Resources:
         - >-
           arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
         - LambdaFunction: !GetAtt LsvSignUpFunction.Arn
+  lsvLoginRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      ApiKeyRequired: false
+      AuthorizationType: CUSTOM
+      OperationName: lsvLoginPost
+      RouteKey: POST /login
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref lsvLoginPostPostIntegration
+      AuthorizerId: !Ref LsvTokenAuthorizer
+  lsvLoginPostPostIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      CredentialsArn: !GetAtt LsvApiGatewayRole.Arn
+      ConnectionType: INTERNET
+      Description: Integration for lsvLoginRoute
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      PassthroughBehavior: WHEN_NO_MATCH
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: '29000'
+      IntegrationUri: !Sub
+        - >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
+        - LambdaFunction: !GetAtt LsvLoginFunction.Arn
   lsvCreateQuestionAnswerRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:

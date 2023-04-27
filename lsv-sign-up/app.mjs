@@ -1,5 +1,6 @@
 import { CognitoIdentityProviderClient, SignUpCommand,  AdminInitiateAuthCommand } from "@aws-sdk/client-cognito-identity-provider";
 
+
 // Set the AWS region
 const region = 'ap-southeast-2';
 const userPoolId = 'ap-southeast-2_JooVrMDto'
@@ -7,7 +8,6 @@ const clientId = 'hsrgcarl1k9t7jrujdg9v61jj';
 
 // Export the handler
 export const handler = async (event) => {
-  console.log(event);
 
   const client = new CognitoIdentityProviderClient({
     region: region
@@ -56,32 +56,36 @@ export const handler = async (event) => {
     const response = await client.send(signUpCommand);
     const userSub = response["UserSub"];
 
-    const params = {
-      AuthFlow: "ADMIN_NO_SRP_AUTH",
-      UserPoolId: userPoolId,
-      ClientId: clientId,
-      AuthParameters: {
-        USERNAME: userSub,
-      },
+  const paramsAuth = {
+    AuthFlow: "ADMIN_NO_SRP_AUTH",
+    UserPoolId: userPoolId,
+    ClientId: clientId,
+    AuthParameters: {
+      USERNAME: userSub,
+      PASSWORD: password
+    },
+  };
+
+  try {
+
+    // console.log(paramsAuth)
+    const responseAuth = await client.send(new AdminInitiateAuthCommand(paramsAuth));
+    const body = {
+      "full_name" : name,
+      "email": email,
+      "access_token" : responseAuth["AuthenticationResult"]["AccessToken"],
+      "refresh_token": responseAuth["AuthenticationResult"]["RefreshToken"],
+      "id_token": responseAuth["AuthenticationResult"]["IdToken"],
+      "uid": uid
     };
+    console.log("Auth Details:", body);
+    return { statusCode: 200, body: JSON.stringify(body) };
 
-    try {
-      const responseAuth = await client.send(new AdminInitiateAuthCommand(params));
-      // return response.AuthenticationResult;
+  } catch (error) {
+    console.log("Auth Details:", error);
+    return { statusCode: 500, body: "Error Signing up" };
+  }
 
-
-      console.log("Sign up successfully:", response);
-      console.log("Auth Details:", responseAuth);
-      console.log("Auth Details - 2 :", responseAuth["AuthenticationResult"]);
-      return { statusCode: 200, body: response };
-
-
-
-    } catch (error) {
-      console.error(error);
-      console.error("Auth Details Error:", error);
-      return { statusCode: 500, body: "Error Signing up" };
-    }
 
   } catch (error) {
     console.error("Error Signing up:", error);
