@@ -20,7 +20,7 @@ Resources:
       Handler: app.handler
       FunctionName: LsvLoginFunction
       Runtime: nodejs18.x
-      CodeUri: lsv-sign-up
+      CodeUri: lsv-login
       Events: {}
       Role:
         Fn::GetAtt:
