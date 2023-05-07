@@ -16,9 +16,9 @@ export const handler = async (event) => {
   console.log(JSON.parse(event.body));
 
   const payLoad = JSON.parse(event.body);
-  const email = payLoad["email"];
-  const password = payLoad["password"];
-  const name = payLoad["name"];
+  const email = payLoad["register_email_field"];
+  const password = payLoad["register_password_field"];
+  const name = payLoad["register_name_field"];
 
   let uid = '';
   const length = 32;
@@ -56,39 +56,46 @@ export const handler = async (event) => {
     const response = await client.send(signUpCommand);
     const userSub = response["UserSub"];
 
-  const paramsAuth = {
-    AuthFlow: "ADMIN_NO_SRP_AUTH",
-    UserPoolId: userPoolId,
-    ClientId: clientId,
-    AuthParameters: {
-      USERNAME: userSub,
-      PASSWORD: password
-    },
-  };
-
-  try {
-
-    // console.log(paramsAuth)
-    const responseAuth = await client.send(new AdminInitiateAuthCommand(paramsAuth));
-    const body = {
-      "full_name" : name,
-      "email": email,
-      "access_token" : responseAuth["AuthenticationResult"]["AccessToken"],
-      "refresh_token": responseAuth["AuthenticationResult"]["RefreshToken"],
-      "id_token": responseAuth["AuthenticationResult"]["IdToken"],
-      "uid": uid
+    const paramsAuth = {
+      AuthFlow: "ADMIN_NO_SRP_AUTH",
+      UserPoolId: userPoolId,
+      ClientId: clientId,
+      AuthParameters: {
+        USERNAME: userSub,
+        PASSWORD: password
+      },
     };
-    console.log("Auth Details:", body);
-    return { statusCode: 200, body: JSON.stringify(body) };
 
-  } catch (error) {
-    console.log("Auth Details:", error);
-    return { statusCode: 500, body: "Error Signing up" };
-  }
+    try {
+
+      // console.log(paramsAuth)
+      const responseAuth = await client.send(new AdminInitiateAuthCommand(paramsAuth));
+      const body = {
+        "full_name" : name,
+        "email": email,
+        "access_token" : responseAuth["AuthenticationResult"]["AccessToken"],
+        "refresh_token": responseAuth["AuthenticationResult"]["RefreshToken"],
+        "id_token": responseAuth["AuthenticationResult"]["IdToken"],
+        "uid": uid
+      };
+      console.log("Auth Details:", body);
+      return { statusCode: 200, body: JSON.stringify(body) };
+
+    } catch (error) {
+      console.log("Auth Details:", error);
+      const errMsg = {
+        "error" : error["name"]
+      };
+      return { statusCode: 500, body: JSON.stringify(errMsg) };
+    }
 
 
   } catch (error) {
     console.error("Error Signing up:", error);
-    return { statusCode: 500, body: "Error Signing up" };
+    const errMsg = {
+      "error" : error["name"]
+    };
+    return { statusCode: 500, body: JSON.stringify(errMsg) };
+
   }
 };

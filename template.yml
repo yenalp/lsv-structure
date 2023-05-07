@@ -137,6 +137,7 @@ Resources:
             - logs:PutLogEvents
             - dynamodb:UpdateItem
             - dynamodb:PutItem
+            - dynamodb:Scan
             - lambda:TagResource
             - lambda:UpdateFunctionCode
             - lambda:*
