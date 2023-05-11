@@ -69,6 +69,27 @@ Resources:
       - AWSCloudMapDiscoverInstanceAccess
     DependsOn:
     - LsvCreateQuestionAnswerExtendedRole
+  LsvSaveUsersQuestionAnswerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      FunctionName: LsvSaveUsersQuestionAnswerFunction
+      Runtime: nodejs18.x
+      CodeUri: lsv-save-users-question-anwsers
+      Events: {}
+      Role:
+        Fn::GetAtt:
+        - LsvSaveUsersQuestionAnswerExtendedRole
+        - Arn
+      Description:  Get a question answer into a dymano table
+      Environment:
+        Variables:
+          DYNAMO_TABLE_NAME:
+            Ref: LsvQuestionAnswer
+      Policies:
+      - AWSCloudMapDiscoverInstanceAccess
+    DependsOn:
+    - LsvSaveUsersQuestionAnswerExtendedRole
   LsvGetQuestionAnswerFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -111,6 +132,37 @@ Resources:
           SERVICE_VARIABLES: ACCESS_TOKEN
       Policies:
         - AWSCloudMapDiscoverInstanceAccess
+  LsvSaveUsersQuestionAnswerExtendedRole:
+    Type: AWS::IAM::Role
+    Properties:
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Policies:
+      - PolicyName: LsvExtendRoleInvokeFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - dynamodb:UpdateItem
+            - dynamodb:PutItem
+            - dynamodb:Scan
+            - lambda:TagResource
+            - lambda:UpdateFunctionCode
+            - lambda:*
+            Resource: "*"
   LsvCreateQuestionAnswerExtendedRole:
     Type: AWS::IAM::Role
     Properties:
