@@ -190,6 +190,7 @@ Resources:
             - dynamodb:UpdateItem
             - dynamodb:PutItem
             - dynamodb:Scan
+            - dynamodb:Query
             - lambda:TagResource
             - lambda:UpdateFunctionCode
             - lambda:*
