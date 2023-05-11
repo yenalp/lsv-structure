@@ -314,6 +314,35 @@ Resources:
         - >-
           arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
         - LambdaFunction: !GetAtt LsvCreateQuestionAnswerFunction.Arn
+  lsvSaveUsersQuestionAnswerRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      ApiKeyRequired: false
+      AuthorizationType: CUSTOM
+      OperationName: lsvSaveUsersQuestionAnswerPost
+      RouteKey: POST /users-question-answer
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref lsvSaveUsersQuestionAnswerPostPostIntegration
+      AuthorizerId: !Ref LsvTokenAuthorizer
+  lsvSaveUsersQuestionAnswerPostPostIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref LsvApiGateway
+      CredentialsArn: !GetAtt LsvApiGatewayRole.Arn
+      ConnectionType: INTERNET
+      Description: Integration for lsvSaveUsersQuestionAnswerRoute
+      IntegrationMethod: POST
+      IntegrationType: AWS_PROXY
+      PassthroughBehavior: WHEN_NO_MATCH
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: '29000'
+      IntegrationUri: !Sub
+        - >-
+          arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LambdaFunction}/invocations
+        - LambdaFunction: !GetAtt LsvSaveUsersQuestionAnswerFunction.Arn
   lsvGetQuestionAnswerRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
@@ -562,7 +591,7 @@ Resources:
                 "Id" : {S: uid},
                 "fullname" : {S: fullName},
                 "email" : {S: email},
-                "completed-quize:": {S: "false"},
+                "completed-quiz": {S: "false"},
                 "attempts" : {S: "0"}
                 }
             };
